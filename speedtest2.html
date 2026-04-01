@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JK SPEEDTEST - Real Speed Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        #capture-area {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 24px;
+        }
+
+        .speed-text {
+            font-size: clamp(6rem, 25vw, 14rem);
+            line-height: 1;
+            font-weight: 400;
+            letter-spacing: -5px;
+            transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .loader-ring {
+            display: inline-block;
+            width: 45px;
+            height: 45px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .metric-val {
+            transition: color 0.3s ease;
+        }
+
+        .logo-img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen py-8 px-6 bg-slate-50">
+
+    <div id="capture-area" class="w-full max-w-4xl shadow-sm border border-gray-100">
+        <header class="w-full flex justify-between items-start mb-10">
+            <div class="flex items-center gap-3">
+                <img src="https://raw.githubusercontent.com/ThandarLin2026/JK/main/image/logo.png" 
+                     alt="JK Logo" 
+                     class="logo-img"
+                     crossorigin="anonymous"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="bg-blue-600 p-1.5 rounded-md hidden">
+                    <i class="fas fa-bolt text-white text-xl"></i>
+                </div>
+                <span class="text-2xl font-black tracking-tighter uppercase italic text-blue-600">JK SPEEDTEST</span>
+            </div>
+            <div class="text-right font-mono">
+                <div id="current-date" class="text-gray-500 text-sm font-bold">--/--/--</div>
+                <div id="current-time" class="text-blue-500 text-xs">00:00:00 AM</div>
+            </div>
+        </header>
+
+        <main class="flex flex-col items-center justify-center w-full text-center">
+            <h2 class="text-lg text-gray-400 mb-2 font-medium uppercase tracking-widest">Internet Speed</h2>
+            
+            <div class="flex items-baseline relative mb-4">
+                <div id="speed-display" class="speed-text text-gray-200">0</div>
+                <div class="flex flex-col items-start ml-4">
+                    <span class="text-4xl font-black text-gray-800">Mbps</span>
+                    <div id="status-container" class="mt-4">
+                        <div id="loading-spinner" class="loader-ring"></div>
+                        <button id="retry-btn" class="hidden border-2 border-blue-500 text-blue-500 rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-50 transition-all shadow-md">
+                            <i class="fas fa-redo-alt text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full max-w-3xl grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 border-t border-gray-50 pt-8">
+                <div class="flex flex-col items-center md:items-start space-y-4">
+                    <div class="text-left w-full px-4">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Latency (Ping)</p>
+                        <p class="text-2xl font-semibold"><span id="ping-val" class="metric-val">-</span> <span class="text-sm text-gray-400 font-normal">ms</span></p>
+                    </div>
+                    <div class="text-left w-full px-4">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jitter</p>
+                        <p class="text-2xl font-semibold"><span id="jitter-val" class="metric-val">-</span> <span class="text-sm text-gray-400 font-normal">ms</span></p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 text-left space-y-3">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">My IP Address</p>
+                        <p id="client-ip" class="text-sm font-bold text-blue-600 font-mono">Loading...</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">Provider (ISP/VPS)</p>
+                        <p id="client-isp" class="text-sm font-semibold text-gray-700 leading-tight">Searching...</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 text-left space-y-3">
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-400 uppercase">City & Region</p>
+                        <p id="client-city" class="text-sm font-bold text-gray-700 italic">---</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-400 uppercase">Country</p>
+                        <p id="client-country" class="text-sm font-semibold text-gray-700">---</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-4 border-t border-gray-50 w-full text-[10px] text-gray-300 uppercase tracking-[0.2em]">
+                Data Used: <span id="total-data" class="text-gray-500 font-bold">-</span> MB | Measured by JK Speed Engine
+            </div>
+        </main>
+    </div>
+
+    <div class="mt-8 flex flex-col gap-4 items-center">
+        <button id="save-btn" class="px-10 py-3 bg-blue-600 text-white rounded-full font-bold shadow-xl hover:bg-blue-700 transform hover:scale-105 transition-all flex items-center gap-2">
+            <i class="fas fa-download"></i> Save Speed Result (PNG)
+        </button>
+        <p class="text-gray-400 text-xs">© 2026 JK SPEEDTEST ENGINE</p>
+    </div>
+
+    <script>
+        const speedDisplay = document.getElementById('speed-display');
+        const retryBtn = document.getElementById('retry-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        
+        const pingVal = document.getElementById('ping-val');
+        const jitterVal = document.getElementById('jitter-val');
+        
+        const clientIp = document.getElementById('client-ip');
+        const clientIsp = document.getElementById('client-isp');
+        const clientCity = document.getElementById('client-city');
+        const clientCountry = document.getElementById('client-country');
+
+        const CHUNKS = 12; 
+        const TEST_FILE = "https://speed.cloudflare.com/__down?bytes=50000000"; 
+        const PING_ENDPOINT = "https://1.1.1.1/cdn-cgi/trace";
+
+        function updateClock() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            document.getElementById('current-date').innerText = `${d}/${m}/${y}`;
+            document.getElementById('current-time').innerText = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        async function fetchIpDetails() {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                clientIp.innerText = data.ip;
+                clientIsp.innerText = data.org || "Unknown Provider";
+                clientCity.innerText = `${data.city}, ${data.region}`;
+                clientCountry.innerText = data.country_name;
+            } catch (e) {
+                clientIp.innerText = "Error Fetching IP";
+            }
+        }
+
+        function updateSpeedColor(mbps) {
+            if (mbps < 10) speedDisplay.style.color = "#ec4899"; 
+            else if (mbps < 50) speedDisplay.style.color = "#f59e0b"; 
+            else speedDisplay.style.color = "#10b981";
+        }
+
+        function updateMetricColor(element, value) {
+            if (value <= 50) element.style.color = "#10b981";
+            else if (value <= 120) element.style.color = "#f59e0b";
+            else element.style.color = "#ef4444";
+        }
+
+        async function measureLatency() {
+            const latencies = [];
+            for (let i = 0; i < 5; i++) {
+                const start = performance.now();
+                try {
+                    await fetch(PING_ENDPOINT, { mode: 'no-cors', cache: 'no-store' });
+                    latencies.push(performance.now() - start);
+                } catch (e) {}
+            }
+            if (latencies.length === 0) return { ping: 0, jitter: 0 };
+            const minPing = Math.min(...latencies);
+            let totalJitter = 0;
+            for (let i = 1; i < latencies.length; i++) totalJitter += Math.abs(latencies[i] - latencies[i-1]);
+            const avgJitter = totalJitter / (latencies.length - 1);
+            return { ping: parseFloat(minPing.toFixed(0)), jitter: parseFloat(avgJitter.toFixed(0)) };
+        }
+
+        async function runTest() {
+            retryBtn.classList.add('hidden');
+            saveBtn.style.display = 'none';
+            loadingSpinner.classList.remove('hidden');
+            speedDisplay.innerText = "0";
+            speedDisplay.style.color = "#e5e7eb"; 
+            
+            fetchIpDetails();
+
+            const netStats = await measureLatency();
+            pingVal.innerText = netStats.ping;
+            jitterVal.innerText = netStats.jitter;
+            updateMetricColor(pingVal, netStats.ping);
+            updateMetricColor(jitterVal, netStats.jitter);
+
+            const startTime = performance.now();
+            let totalLoaded = 0;
+            const controllers = Array.from({length: CHUNKS}, () => new AbortController());
+
+            const testPromises = controllers.map(async (controller) => {
+                try {
+                    const response = await fetch(TEST_FILE + "&cb=" + Math.random(), { 
+                        cache: 'no-store',
+                        signal: controller.signal 
+                    });
+                    const reader = response.body.getReader();
+                    while(true) {
+                        const {done, value} = await reader.read();
+                        if (done) break;
+                        totalLoaded += value.length;
+                        const elapsed = (performance.now() - startTime) / 1000;
+                        if (elapsed > 0.1) {
+                            const mbps = (totalLoaded * 8 / (1024 * 1024)) / elapsed;
+                            const dMbps = Math.floor(mbps);
+                            speedDisplay.innerText = dMbps;
+                            updateSpeedColor(dMbps);
+                        }
+                    }
+                } catch (e) {}
+            });
+
+            const timeout = setTimeout(() => controllers.forEach(c => c.abort()), 10000);
+            await Promise.all(testPromises);
+            clearTimeout(timeout);
+
+            const finalElapsed = (performance.now() - startTime) / 1000;
+            const finalMbps = (totalLoaded * 8 / (1024 * 1024)) / finalElapsed;
+            const finalDisplay = finalMbps > 100 ? Math.floor(finalMbps) : finalMbps.toFixed(1);
+
+            speedDisplay.innerText = finalDisplay;
+            updateSpeedColor(parseFloat(finalDisplay));
+            document.getElementById('total-data').innerText = (totalLoaded / (1024 * 1024)).toFixed(1);
+            
+            loadingSpinner.classList.add('hidden');
+            retryBtn.classList.remove('hidden');
+            saveBtn.style.display = 'flex';
+        }
+
+        saveBtn.onclick = () => {
+            const area = document.getElementById('capture-area');
+            const retryBox = document.getElementById('status-container');
+            retryBox.style.visibility = 'hidden';
+
+            html2canvas(area, {
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                scale: 3
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `JK-Result-${Date.now()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                retryBox.style.visibility = 'visible';
+            });
+        };
+
+        retryBtn.onclick = runTest;
+        window.onload = runTest;
+    </script>
+</body>
+</html>
+
+
